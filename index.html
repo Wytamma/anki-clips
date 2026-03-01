@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="./src/style.css">
+    <title>Anki Clips</title>
+  </head>
+  <body>
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <main class="app">
+      <h1>Anki Clips</h1>
+      <p>Drop a video, add clips with synced timestamps, then export Anki import files.</p>
+
+      <section class="panel">
+        <h2>Clip editor</h2>
+        <label>
+          Deck name
+          <input id="deckName" type="text" value="Video Clips" />
+        </label>
+
+        <input id="videoFile" type="file" accept="video/*" hidden />
+
+        <div id="uploadStage">
+          <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="Upload video">
+            <p><strong>Drag and drop video here</strong></p>
+            <p>or</p>
+            <button id="chooseVideoButton" type="button">Choose video</button>
+          </div>
+        </div>
+
+        <div id="videoStage" class="hidden">
+          <video id="videoPreview" class="video-preview" controls></video>
+        </div>
+
+        <div class="inline-controls">
+          <button id="setStartButton" type="button">Mark start</button>
+          <button id="setEndButton" type="button">Mark end</button>
+          <span id="videoTime">Current time: 00:00:00</span>
+        </div>
+
+        <div class="manual-row-grid">
+          <label>
+            Start
+            <input id="rowStart" type="text" placeholder="e.g. 12.5 or 00:00:12.500" />
+          </label>
+          <label>
+            End
+            <input id="rowEnd" type="text" placeholder="e.g. 18.2 or 00:00:18.200" />
+          </label>
+          <label class="wide-field">
+            Front text
+            <input id="rowQuestion" type="text" placeholder="If filled, video is used on back side" />
+          </label>
+          <label class="wide-field">
+            Back text
+            <input id="rowAnswer" type="text" placeholder="If this is the only text, video is used on front side" />
+          </label>
+        </div>
+
+        <button id="addRowButton" type="button">Add clip</button>
+      </section>
+
+
+      <section class="panel">
+        <div class="inline-controls between">
+          <h2>Clips</h2>
+          <div class="inline-controls">
+            <button id="buildButton" type="button" disabled>Generate Anki import zip</button>
+            <button id="clearRowsButton" type="button">Clear all</button>
+          </div>
+        </div>
+        <div id="preview"></div>
+      </section>
+       <section class="panel">
+        <h2>Notes</h2>
+        <p>Video placement: if front text exists, video goes on back. If only back text exists, video goes on front.</p>
+        <p>Time format: seconds (e.g. 12.5) or hh:mm:ss(.ms)</p>
+        <p id="status" class="status-text">Ready.</p>
+      </section>
+
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
