@@ -12,7 +12,6 @@ const chooseVideoButton = document.querySelector('#chooseVideoButton');
 const dropZone = document.querySelector('#dropZone');
 const uploadStage = document.querySelector('#uploadStage');
 const videoStage = document.querySelector('#videoStage');
-const deckInput = document.querySelector('#deckName');
 const videoPreview = document.querySelector('#videoPreview');
 const videoTimeEl = document.querySelector('#videoTime');
 const setStartButton = document.querySelector('#setStartButton');
@@ -584,8 +583,6 @@ async function onBuild() {
   addRowButton.disabled = true;
   clearRowsButton.disabled = true;
 
-  const deckName = (deckInput.value || 'Video Clips').trim();
-
   try {
     showToast('Starting clip processing...', 'info', 1800);
     const rows = validateRows(state.rows);
@@ -664,7 +661,7 @@ async function onBuild() {
     );
 
     const outputBlob = await zip.generateAsync({ type: 'blob' });
-    downloadBlob(outputBlob, `${sanitizeFilePart(deckName)}_anki_import.zip`);
+    downloadBlob(outputBlob, 'anki_clips_import.zip');
 
     setStatus(`Done. Generated ${rows.length} cards and export ZIP.`);
     showToast(`Export complete: ${rows.length} clips.`, 'success', 3200);
