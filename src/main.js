@@ -18,6 +18,9 @@ const setStartButton = document.querySelector('#setStartButton');
 const setEndButton = document.querySelector('#setEndButton');
 const addRowButton = document.querySelector('#addRowButton');
 const clearRowsButton = document.querySelector('#clearRowsButton');
+const exportCsvButton = document.querySelector('#exportCsvButton');
+const importCsvButton = document.querySelector('#importCsvButton');
+const importCsvFile = document.querySelector('#importCsvFile');
 const rowStartInput = document.querySelector('#rowStart');
 const rowEndInput = document.querySelector('#rowEnd');
 const rowQuestionInput = document.querySelector('#rowQuestion');
@@ -74,6 +77,15 @@ setEndButton.addEventListener('click', () => {
 });
 addRowButton.addEventListener('click', onAddRow);
 clearRowsButton.addEventListener('click', onClearRows);
+exportCsvButton?.addEventListener('click', onExportCsv);
+importCsvButton?.addEventListener('click', () => {
+  if (!importCsvFile) {
+    return;
+  }
+  importCsvFile.value = '';
+  importCsvFile.click();
+});
+importCsvFile?.addEventListener('change', onImportCsvSelected);
 videoPreview.addEventListener('timeupdate', () => {
   videoTimeEl.textContent = `Current time: ${formatSeconds(videoPreview.currentTime || 0)}`;
 });
@@ -245,6 +257,124 @@ function downloadBlob(blob, filename) {
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+}
+
+function escapeCsvCell(value) {
+  const text = String(value ?? '');
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    const next = text[i + 1];
+
+    if (inQuotes) {
+      if (ch === '"' && next === '"') {
+        cell += '"';
+        i += 1;
+      } else if (ch === '"') {
+        inQuotes = false;
+      } else {
+        cell += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ',') {
+      row.push(cell);
+      cell = '';
+    } else if (ch === '\n') {
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = '';
+    } else if (ch === '\r') {
+      // ignore
+    } else {
+      cell += ch;
+    }
+  }
+
+  if (cell.length > 0 || row.length > 0) {
+    row.push(cell);
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function onExportCsv() {
+  const header = ['start', 'end', 'front', 'back'];
+  const lines = [header.join(',')];
+
+  for (const row of state.rows) {
+    lines.push(
+      [
+        escapeCsvCell(formatSecondsInput(parseTime(row.start) ?? 0)),
+        escapeCsvCell(formatSecondsInput(parseTime(row.end) ?? 0)),
+        escapeCsvCell(String(row.question ?? '')),
+        escapeCsvCell(String(row.answer ?? '')),
+      ].join(','),
+    );
+  }
+
+  const csvBlob = new Blob([`${lines.join('\n')}\n`], { type: 'text/csv;charset=utf-8' });
+  downloadBlob(csvBlob, 'clips.csv');
+  showToast(`Exported ${state.rows.length} clips to CSV.`, 'success');
+}
+
+async function onImportCsvSelected() {
+  const file = importCsvFile?.files?.[0];
+  if (!file) {
+    return;
+  }
+
+  try {
+    const text = await file.text();
+    const rows = parseCsv(text).filter((r) => r.some((c) => String(c).trim() !== ''));
+    if (!rows.length) {
+      throw new Error('CSV is empty.');
+    }
+
+    const [headerRow, ...dataRows] = rows;
+    const header = headerRow.map((h) => String(h).trim().toLowerCase());
+    const startIndex = header.indexOf('start');
+    const endIndex = header.indexOf('end');
+    const frontIndex = header.indexOf('front');
+    const backIndex = header.indexOf('back');
+
+    if (startIndex < 0 || endIndex < 0 || frontIndex < 0 || backIndex < 0) {
+      throw new Error('CSV must include headers: start,end,front,back');
+    }
+
+    const importedRows = dataRows.map((r, idx) => ({
+      rowNumber: idx + 1,
+      start: String(r[startIndex] ?? '').trim(),
+      end: String(r[endIndex] ?? '').trim(),
+      question: String(r[frontIndex] ?? '').trim(),
+      answer: String(r[backIndex] ?? '').trim(),
+    }));
+
+    state.rows = validateRows(importedRows);
+    renderPreview(state.rows);
+    updateBuildButtonState();
+    showToast(`Imported ${state.rows.length} clips from CSV.`, 'success');
+    setStatus(`Imported ${state.rows.length} clips from CSV.`);
+  } catch (error) {
+    showToast(`CSV import failed: ${error.message}`, 'error', 3500);
+    setStatus(`CSV import failed: ${error.message}`);
+  }
 }
 
 function validateRows(rows) {
