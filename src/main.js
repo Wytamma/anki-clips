@@ -25,7 +25,8 @@ const rowStartInput = document.querySelector('#rowStart');
 const rowEndInput = document.querySelector('#rowEnd');
 const rowQuestionInput = document.querySelector('#rowQuestion');
 const rowAnswerInput = document.querySelector('#rowAnswer');
-const toastContainer = document.querySelector('#toastContainer');
+const skipBackButton = document.querySelector('#skipBackButton');
+const skipForwardButton = document.querySelector('#skipForwardButton');
 
 const state = {
   rows: [],
@@ -67,6 +68,15 @@ dropZone.addEventListener('drop', (event) => {
     return;
   }
   loadVideoFile(file);
+});
+skipBackButton.addEventListener('click', () => {
+  videoPreview.currentTime = Math.max(0, videoPreview.currentTime - 3);
+});
+skipForwardButton.addEventListener('click', () => {
+  const newTime = videoPreview.currentTime + 3;
+  videoPreview.currentTime = Number.isFinite(videoPreview.duration)
+    ? Math.min(videoPreview.duration, newTime)
+    : newTime;
 });
 videoInput.addEventListener('change', onVideoSelected);
 setStartButton.addEventListener('click', () => {
